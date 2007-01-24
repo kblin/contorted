@@ -1,0 +1,5 @@
+2006-12-06  Kai Blin  <kai.blin@gmail.com>
+	* Started working on contorted, a mock dplay client/server.
+	* dplay_common.c, dplay_common.h: Functions common to the client and the server.
+	* dpsvr.c, dpsvr.h: Simple mockup dplay server. 
+	* Makefile: Simple makefile.
