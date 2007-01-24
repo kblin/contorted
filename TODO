@@ -1,0 +1,10 @@
+Things to do in no particular order:
+
+* Implement a dplay game lister that can connect to games and list basic
+  information on the number of players, etc.
+
+* Create a dplay lobby server that supports the protocol the chatconnect sample
+  uses.
+
+* Add documentation about the dplay protocol to the doc/ dir.
+ 
