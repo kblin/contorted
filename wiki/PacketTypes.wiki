@@ -1,0 +1,18 @@
+#summary A broad overview over the dplay packet types that have been discovered so far.
+
+= Introduction =
+
+Dplay uses a plethora of different packet types to carry information.
+Here is an overview over the packets that I could figure out so far.
+
+Note that the packets I am talking about here do not include the actual updates the game sends, those will be sent via UDP using application-specific encoding of the data. (Well, unless it's a type 0x0016 packet. Getting an idea why this project is called contorted?)
+
+
+= Details =
+
+Add your content here.  Format your content with:
+  * Text in *bold* or _italic_
+  * Headings, paragraphs, and lists
+  * Automatic links to other wiki pages
+
+
