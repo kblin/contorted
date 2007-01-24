@@ -1,4 +1,4 @@
-#summary A broad overview over the dplay packet types that have been discovered so far.
+#summary A broad overview over the known dplay packet types.
 #labels Phase-Design,Phase-Implementation
 
 = Introduction =
@@ -35,4 +35,3 @@ The following packets have been identified, grouped by their packet ID (see Dpla
   * Type 0x002e: NewPlayerNotification
   * Type 0x002f: NewPlayerConfirmation
   * Type 0x0038: PlayerInformationNewPlayer
-
