@@ -1,0 +1,15 @@
+#summary Detailed analysis of the dplay packet headers.
+#labels Phase-Design,Phase-Implementation
+
+= Introduction =
+
+All dplay packets share a common header. (Apart from the raw UDP data packets, of course. They don't have a header.)
+
+
+= Components =
+
+Add component list here.
+
+= Example =
+
+Add example here.
