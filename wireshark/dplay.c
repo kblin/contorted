@@ -1,5 +1,5 @@
 /*
- * Copyright 2006 Kai Blin
+ * Copyright 2006, 2007 by Kai Blin
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -59,6 +59,46 @@ static int hf_dplay_type_2 = -1;            /* that also has a "play" string, a 
 static int hf_dplay_proto_version_2 = -1;   /* protocol version, same as above */
 static const int DPLAY_HEADER_OFFSET = 28;  /* The dplay header is 28 bytes in size */
 
+/* The following fields are not part of the header, but hopefully have the same
+ * meaning for all packets they show up in. */
+
+static int hf_dplay_flags = -1; /* This is a 32bit field with some sort of a flag */
+static int hf_dplay_flags_0001 = -1;
+static int hf_dplay_flags_0002 = -1;
+static int hf_dplay_flags_0004 = -1;
+static int hf_dplay_flags_0008 = -1;
+static int hf_dplay_flags_0010 = -1;
+static int hf_dplay_flags_0020 = -1;
+static int hf_dplay_flags_0040 = -1;
+static int hf_dplay_flags_0080 = -1;
+static int hf_dplay_flags_0100 = -1;
+static int hf_dplay_flags_0200 = -1;
+static int hf_dplay_flags_0400 = -1;
+static int hf_dplay_flags_0800 = -1;
+static int hf_dplay_flags_1000 = -1;
+static int hf_dplay_flags_encapsulate = -1;
+static int hf_dplay_flags_4000 = -1;
+static int hf_dplay_flags_8000 = -1;
+#define DPLAY_FLAG_0001 0x0001
+#define DPLAY_FLAG_0002 0x0002
+#define DPLAY_FLAG_0004 0x0004
+#define DPLAY_FLAG_0008 0x0008
+#define DPLAY_FLAG_0010 0x0010
+#define DPLAY_FLAG_0020 0x0020
+#define DPLAY_FLAG_0040 0x0040
+#define DPLAY_FLAG_0080 0x0080
+#define DPLAY_FLAG_0100 0x0100
+#define DPLAY_FLAG_0200 0x0200
+#define DPLAY_FLAG_0400 0x0400
+#define DPLAY_FLAG_0800 0x0800
+#define DPLAY_FLAG_1000 0x1000
+#define DPLAY_FLAG_ENCAPSULATE 0x2000
+#define DPLAY_FLAG_4000 0x4000
+#define DPLAY_FLAG_8000 0x8000
+
+static int hf_dplay_game_guid = -1; /* the GUID of the game */
+static int hf_dplay_instance_guid = -1; /* The GUID of the game's instance object */
+
 /* special fields, to be phased out in favour for more detailed information */
 static int hf_dplay_data_type_0d = -1;
 static int hf_dplay_data_type_0e = -1;
@@ -68,14 +108,11 @@ static int hf_dplay_data_type_29 = -1;
 
 /* Message Type 0x0001 data fields */
 static int hf_dplay_type_01_length_1 = -1;
-static int hf_dplay_type_01_magic_number = -1;
-static int hf_dplay_type_01_game_guid = -1;
-static int hf_dplay_type_01_unknown_guid = -1;
 static int hf_dplay_type_01_max_players = -1;
 static int hf_dplay_type_01_curr_players = -1;
 static int hf_dplay_type_01_magic_8_bytes = -1;
 static int hf_dplay_type_01_dpid = -1;
-static int hf_dplay_type_01_unknown_2 = -1;
+static int hf_dplay_type_01_magic_20_bytes = -1;
 static int hf_dplay_type_01_backslash = -1;
 static int hf_dplay_type_01_game_name = -1;
 
@@ -155,9 +192,6 @@ static int hf_dplay_type_29_unknown_uint32_05 = -1;
 static int hf_dplay_type_29_unknown_uint32_06 = -1;
 static int hf_dplay_type_29_unknown_uint32_07 = -1;
 static int hf_dplay_type_29_unknown_uint32_08 = -1;
-static int hf_dplay_type_29_magic_number = -1;
-static int hf_dplay_type_29_unknown_guid = -1; /* 16 bytes */
-static int hf_dplay_type_29_game_guid = -1;   /* 16 bytes */
 static int hf_dplay_type_29_magic_16_bytes = -1;
 static int hf_dplay_type_29_dpid_1 = -1;
 static int hf_dplay_type_29_unknown_3 = -1;
@@ -236,6 +270,7 @@ static gint ett_dplay = -1;
 static gint ett_dplay_header = -1;
 static gint ett_dplay_data = -1;
 static gint ett_dplay_enc_packet = -1;
+static gint ett_dplay_flags = -1;
 static gint ett_dplay_type08_saddr1 = -1;
 static gint ett_dplay_type08_saddr2 = -1;
 static gint ett_dplay_type13_saddr1 = -1;
@@ -288,10 +323,14 @@ static const value_string dplay_type05_request[] = {
     { 0         , NULL},
 };
 
-static const value_string dplay_message_flags[] = {
-    { 0x00000a00, "Use encapsulation"},
-    { 0x00000044, "Unknown flags"},
-    { 0         , NULL},
+static const true_false_string tfs_dplay_flag = {
+    "present",
+    "absent"
+};
+
+static const true_false_string tfs_dplay_flag_encapsulate = {
+    "Encapsulate",
+    "Don't encapsulate"
 };
 
 #ifndef ENABLE_STATIC
@@ -371,18 +410,40 @@ static gint dissect_dplay_header(proto_tree *tree, tvbuff_t *tvb, gint offset)
 static gint dissect_type01_message(proto_tree *tree, tvbuff_t *tvb, gint offset)
 {
     gint data_len;
+    guint32 flags;
     data_len = tvb_get_letohl(tvb, offset);
+    flags = tvb_get_letohl(tvb, offset+4);
+    proto_item *flags_item = NULL;
+    proto_tree *flags_tree = NULL;
 
     proto_tree_add_item(tree, hf_dplay_type_01_length_1, tvb, offset, 4, TRUE); offset += 4;
-    proto_tree_add_item(tree, hf_dplay_type_01_magic_number, tvb, offset, 4, TRUE); offset += 4;
-    proto_tree_add_item(tree, hf_dplay_type_01_unknown_guid, tvb, offset, 16, FALSE); offset += 16;
-    proto_tree_add_item(tree, hf_dplay_type_01_game_guid, tvb, offset, 16, FALSE); offset += 16;
+    flags_item = proto_tree_add_item(tree, hf_dplay_flags, tvb, offset, 4, TRUE);
+    flags_tree = proto_item_add_subtree(flags_item, ett_dplay_flags);
+    proto_tree_add_boolean(flags_tree, hf_dplay_flags_0001, tvb, offset, 4, flags);
+    proto_tree_add_boolean(flags_tree, hf_dplay_flags_0002, tvb, offset, 4, flags);
+    proto_tree_add_boolean(flags_tree, hf_dplay_flags_0004, tvb, offset, 4, flags);
+    proto_tree_add_boolean(flags_tree, hf_dplay_flags_0008, tvb, offset, 4, flags);
+    proto_tree_add_boolean(flags_tree, hf_dplay_flags_0010, tvb, offset, 4, flags);
+    proto_tree_add_boolean(flags_tree, hf_dplay_flags_0020, tvb, offset, 4, flags);
+    proto_tree_add_boolean(flags_tree, hf_dplay_flags_0040, tvb, offset, 4, flags);
+    proto_tree_add_boolean(flags_tree, hf_dplay_flags_0080, tvb, offset, 4, flags);
+    proto_tree_add_boolean(flags_tree, hf_dplay_flags_0100, tvb, offset, 4, flags);
+    proto_tree_add_boolean(flags_tree, hf_dplay_flags_0200, tvb, offset, 4, flags);
+    proto_tree_add_boolean(flags_tree, hf_dplay_flags_0400, tvb, offset, 4, flags);
+    proto_tree_add_boolean(flags_tree, hf_dplay_flags_0800, tvb, offset, 4, flags);
+    proto_tree_add_boolean(flags_tree, hf_dplay_flags_1000, tvb, offset, 4, flags);
+    proto_tree_add_boolean(flags_tree, hf_dplay_flags_encapsulate, tvb, offset, 4, flags);
+    proto_tree_add_boolean(flags_tree, hf_dplay_flags_4000, tvb, offset, 4, flags);
+    proto_tree_add_boolean(flags_tree, hf_dplay_flags_8000, tvb, offset, 4, flags);
+    offset += 4;
+
+    proto_tree_add_item(tree, hf_dplay_instance_guid, tvb, offset, 16, FALSE); offset += 16;
+    proto_tree_add_item(tree, hf_dplay_game_guid, tvb, offset, 16, FALSE); offset += 16;
     proto_tree_add_item(tree, hf_dplay_type_01_max_players, tvb, offset, 4, TRUE); offset += 4;
     proto_tree_add_item(tree, hf_dplay_type_01_curr_players, tvb, offset, 4, TRUE); offset += 4;
     proto_tree_add_item(tree, hf_dplay_type_01_magic_8_bytes, tvb, offset, 8, FALSE); offset += 8;
     proto_tree_add_item(tree, hf_dplay_type_01_dpid, tvb, offset, 4, FALSE); offset += 4;
-    proto_tree_add_item(tree, hf_dplay_type_01_unknown_2, tvb, offset, data_len - 60, FALSE);
-    offset += data_len - 60;
+    proto_tree_add_item(tree, hf_dplay_type_01_magic_20_bytes, tvb, offset, 20, FALSE);offset += 20;
     offset = display_unicode_string(tree, hf_dplay_type_01_backslash, tvb, offset);
     offset = display_unicode_string(tree, hf_dplay_type_01_game_name, tvb, offset);
     return offset;
@@ -593,9 +654,9 @@ static gint dissect_type29_message(proto_tree *tree, tvbuff_t *tvb, gint offset)
     proto_tree_add_item(tree, hf_dplay_type_29_unknown_uint32_06, tvb, offset, 4, TRUE); offset += 4;
     proto_tree_add_item(tree, hf_dplay_type_29_unknown_uint32_07, tvb, offset, 4, TRUE); offset += 4;
     proto_tree_add_item(tree, hf_dplay_type_29_unknown_uint32_08, tvb, offset, 4, TRUE); offset += 4;
-    proto_tree_add_item(tree, hf_dplay_type_29_magic_number, tvb, offset, 4, TRUE); offset += 4;
-    proto_tree_add_item(tree, hf_dplay_type_29_unknown_guid, tvb, offset, 16, FALSE); offset += 16;
-    proto_tree_add_item(tree, hf_dplay_type_29_game_guid, tvb, offset, 16, FALSE); offset += 16;
+    proto_tree_add_item(tree, hf_dplay_flags, tvb, offset, 4, TRUE); offset += 4;
+    proto_tree_add_item(tree, hf_dplay_instance_guid, tvb, offset, 16, FALSE); offset += 16;
+    proto_tree_add_item(tree, hf_dplay_game_guid, tvb, offset, 16, FALSE); offset += 16;
     proto_tree_add_item(tree, hf_dplay_type_29_magic_16_bytes, tvb, offset, 16, FALSE); offset += 16;
     proto_tree_add_item(tree, hf_dplay_type_29_dpid_1, tvb, offset, 4, FALSE); offset += 4;
     proto_tree_add_item(tree, hf_dplay_type_29_unknown_3, tvb, offset, 20, FALSE); offset += 20;
@@ -917,6 +978,64 @@ static void proto_register_dplay()
     { &hf_dplay_proto_version_2,
         { "DirectPlay second protocol version", "dplay.proto.version_2", FT_UINT16, BASE_HEX,
         VALS(dplay_proto_version_val), 0x0, "", HFILL}},
+    { &hf_dplay_flags,
+        { "DirectPlay message flags", "dplay.flags", FT_UINT32, BASE_HEX,
+        NULL, 0x0, "", HFILL}},
+    { &hf_dplay_flags_0001,
+        { "DirectPlay message flag 0x0001", "dplay.flags.flag_0001", FT_BOOLEAN, 32,
+        TFS(&tfs_dplay_flag), DPLAY_FLAG_0001, "Flag 0x0001", HFILL}},
+    { &hf_dplay_flags_0002,
+        { "DirectPlay message flag 0x0002", "dplay.flags.flag_0002", FT_BOOLEAN, 32,
+        TFS(&tfs_dplay_flag), DPLAY_FLAG_0002, "Flag 0x0002", HFILL}},
+    { &hf_dplay_flags_0004,
+        { "DirectPlay message flag 0x0004", "dplay.flags.flag_0004", FT_BOOLEAN, 32,
+        TFS(&tfs_dplay_flag), DPLAY_FLAG_0004, "Flag 0x0004", HFILL}},
+    { &hf_dplay_flags_0008,
+        { "DirectPlay message flag 0x0008", "dplay.flags.flag_0008", FT_BOOLEAN, 32,
+        TFS(&tfs_dplay_flag), DPLAY_FLAG_0008, "Flag 0x0001", HFILL}},
+    { &hf_dplay_flags_0010,
+        { "DirectPlay message flag 0x0010", "dplay.flags.flag_0010", FT_BOOLEAN, 32,
+        TFS(&tfs_dplay_flag), DPLAY_FLAG_0010, "Flag 0x0001", HFILL}},
+    { &hf_dplay_flags_0020,
+        { "DirectPlay message flag 0x0020", "dplay.flags.flag_0020", FT_BOOLEAN, 32,
+        TFS(&tfs_dplay_flag), DPLAY_FLAG_0020, "Flag 0x0020", HFILL}},
+    { &hf_dplay_flags_0040,
+        { "DirectPlay message flag 0x0040", "dplay.flags.flag_0040", FT_BOOLEAN, 32,
+        TFS(&tfs_dplay_flag), DPLAY_FLAG_0040, "Flag 0x0040", HFILL}},
+    { &hf_dplay_flags_0080,
+        { "DirectPlay message flag 0x0080", "dplay.flags.flag_0080", FT_BOOLEAN, 32,
+        TFS(&tfs_dplay_flag), DPLAY_FLAG_0080, "Flag 0x0080", HFILL}},
+    { &hf_dplay_flags_0100,
+        { "DirectPlay message flag 0x0100", "dplay.flags.flag_0100", FT_BOOLEAN, 32,
+        TFS(&tfs_dplay_flag), DPLAY_FLAG_0100, "Flag 0x0100", HFILL}},
+    { &hf_dplay_flags_0200,
+        { "DirectPlay message flag 0x0200", "dplay.flags.flag_0200", FT_BOOLEAN, 32,
+        TFS(&tfs_dplay_flag), DPLAY_FLAG_0200, "Flag 0x0200", HFILL}},
+    { &hf_dplay_flags_0400,
+        { "DirectPlay message flag 0x0400", "dplay.flags.flag_0400", FT_BOOLEAN, 32,
+        TFS(&tfs_dplay_flag), DPLAY_FLAG_0400, "Flag 0x0400", HFILL}},
+    { &hf_dplay_flags_0800,
+        { "DirectPlay message flag 0x0800", "dplay.flags.flag_0800", FT_BOOLEAN, 32,
+        TFS(&tfs_dplay_flag), DPLAY_FLAG_0800, "Flag 0x0800", HFILL}},
+    { &hf_dplay_flags_1000,
+        { "DirectPlay message flag 0x1000", "dplay.flags.flag_1000", FT_BOOLEAN, 32,
+        TFS(&tfs_dplay_flag), DPLAY_FLAG_1000, "Flag 0x1000", HFILL}},
+    { &hf_dplay_flags_encapsulate,
+        { "DirectPlay encapsulation flag", "dplay.flags.encapsulate", FT_BOOLEAN, 32,
+        TFS(&tfs_dplay_flag_encapsulate), DPLAY_FLAG_ENCAPSULATE, "Flag 0x2000", HFILL}},
+    { &hf_dplay_flags_4000,
+        { "DirectPlay message flag 0x4000", "dplay.flags.flag_4000", FT_BOOLEAN, 32,
+        TFS(&tfs_dplay_flag), DPLAY_FLAG_4000, "Flag 0x4000", HFILL}},
+    { &hf_dplay_flags_8000,
+        { "DirectPlay message flag 0x8000", "dplay.flags.flag_8000", FT_BOOLEAN, 32,
+        TFS(&tfs_dplay_flag), DPLAY_FLAG_8000, "Flag 0x8000", HFILL}},
+
+    { &hf_dplay_instance_guid,
+        { "DirectPlay instance guid", "dplay.instance.guid", FT_GUID, BASE_NONE,
+        NULL, 0x0, "", HFILL}},
+    { &hf_dplay_game_guid,
+        { "DirectPlay game GUID", "dplay.game.guid", FT_GUID, BASE_NONE,
+        NULL, 0x0, "", HFILL}},
 
     /* special fields, to be phased out*/
     { &hf_dplay_data_type_0d,
@@ -939,15 +1058,6 @@ static void proto_register_dplay()
     { &hf_dplay_type_01_length_1,
         { "DirectPlay message type 0x0001 data length", "dplay.type_01.length_1", FT_UINT32, BASE_DEC,
         NULL, 0x0, "", HFILL}},
-    { &hf_dplay_type_01_magic_number,
-        { "DirectPlay message type 0x0001 magic number", "dplay.type_01.magic_number", FT_UINT32, BASE_HEX,
-        NULL, 0x0, "", HFILL}},
-    { &hf_dplay_type_01_unknown_guid,
-        { "DirectPlay message type 0x0001 unknown guid", "dplay.type_01.unknown_guid", FT_GUID, BASE_NONE,
-        NULL, 0x0, "", HFILL}},
-    { &hf_dplay_type_01_game_guid,
-        { "DirectPlay game GUID", "dplay.type01.game.guid", FT_GUID, BASE_NONE,
-        NULL, 0x0, "", HFILL}},
     { &hf_dplay_type_01_max_players,
         { "DirectPlay maximal players ", "dplay.type_01.max_players", FT_UINT32, BASE_DEC,
         NULL, 0x0, "", HFILL}},
@@ -960,8 +1070,8 @@ static void proto_register_dplay()
     { &hf_dplay_type_01_dpid,
         { "DirectPlay Lobby server ID", "dplay.type_01.dpid", FT_BYTES, BASE_HEX,
         NULL, 0x0, "", HFILL}},
-    { &hf_dplay_type_01_unknown_2,
-        { "DirectPlay message type 0x0001 unknown 2", "dplay.type_01.unknown_2", FT_BYTES, BASE_HEX,
+    { &hf_dplay_type_01_magic_20_bytes,
+        { "DirectPlay message type 0x0001 magic 20 bytes", "dplay.type_01.magic_20_bytes", FT_BYTES, BASE_HEX,
         NULL, 0x0, "", HFILL}},
     { &hf_dplay_type_01_backslash,
         { "DirectPlay message type 0x0001 backslash", "dplay.type_01.backslash", FT_STRING, BASE_NONE,
@@ -1160,15 +1270,6 @@ static void proto_register_dplay()
     { &hf_dplay_type_29_unknown_uint32_08,
         { "DirectPlay message type 0x0029 unknown uint32 8 (80)", "dplay.type_29.unknown_uint32_08", FT_UINT32,
         BASE_DEC, NULL, 0x0, "", HFILL}},
-    { &hf_dplay_type_29_magic_number,
-        { "DirectPlay message type 0x0029 magic number", "dplay.type_29.magic_number", FT_UINT32,
-        BASE_HEX, NULL, 0x0, "", HFILL}},
-    { &hf_dplay_type_29_unknown_guid,
-        { "DirectPlay message type 0x0029 unknown GUID", "dplay.type_29.unknown_guid", FT_GUID, BASE_NONE,
-        NULL, 0x0, "", HFILL}},
-    { &hf_dplay_type_29_game_guid,
-        { "DirectPlay message type 0x0029 game GUID", "dplay.type_29.game_guid", FT_GUID, BASE_NONE,
-        NULL, 0x0, "", HFILL}},
     { &hf_dplay_type_29_magic_16_bytes,
         { "DirectPlay message type 0x0029 magic 16 bytes", "dplay.type_29.magic_16_bytes", FT_BYTES, BASE_HEX,
         NULL, 0x0, "", HFILL}},
@@ -1376,6 +1477,7 @@ static void proto_register_dplay()
         &ett_dplay,
         &ett_dplay_header,
         &ett_dplay_data,
+        &ett_dplay_flags,
         &ett_dplay_enc_packet,
         &ett_dplay_type08_saddr1,
         &ett_dplay_type08_saddr2,
