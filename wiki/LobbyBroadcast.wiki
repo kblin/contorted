@@ -6,7 +6,7 @@
 The lobby broadcast is sent through the network to find available dplay games.
 Even though I called this packet _broadcast_, the same message is sent to a specific IP address when your game allows specifying the IP address of the server.
 
-Uusally, this is an UDP packet, but if the sender doesn't get any reply after a timeout, it will send the same packet via TCP, too.
+Usally, this is an UDP packet, but if the sender doesn't get any reply after a timeout, it will send the same packet via TCP, too.
 
 = Components =
 
@@ -15,12 +15,53 @@ Uusally, this is an UDP packet, but if the sender doesn't get any reply after a 
 {{{
  0   1   2   3   4   5   6   7   8   9   A   B   C   D   E   F
 +----------------------------------------------------------------+
+| Message size  | dplay flags   |        instance GUID           |
++----------------------------------------------------------------+
+|   instance GUID cont.         |         game GUID              |
++----------------------------------------------------------------+
+|      game GUID cont.          |  max players  | curr players   |
++----------------------------------------------------------------+
+| unknown magic 8 bytes         | DPID          | unknown 20...  |
++----------------------------------------------------------------+
+| ... bytes                                                      |
++----------------------------------------------------------------+
+| Custom game name data, size is Message Size - 80               |
++----------------------------------------------------------------+
 }}}
 
 == Legend ==
 
-|| `foo`  || foo explained ||
+|| `message size`  || The complete size of the message. ||
+|| `dplay flags`   || dplay message flags, see below for a list of identified flags. ||
+|| `instance GUID` || The GUID of the game instance. ||
+|| `game GUID`     || The GUID of the game. ||
+|| `max players`   || Maximum players allowed in the game. ||
+|| `curr players`  || Number of players currently in the game. ||
+|| `magic 8 bytes` || Usage not identified yet. Might be game specific. ||
+|| `DPID`          || A dplay ID, usage not identified yet. ||
+|| `20 bytes`      || Usage not identified, might be padding. ||
+
+== dplay flags ==
+
+|| `0x00000001` || Unknown ||
+|| `0x00000002` || Unknown ||
+|| `0x00000004` || Unknown ||
+|| `0x00000008` || Unknown ||
+|| `0x00000010` || Unknown ||
+|| `0x00000020` || Unknown ||
+|| `0x00000040` || Unknown ||
+|| `0x00000080` || Unknown ||
+|| `0x00000100` || Unknown ||
+|| `0x00000200` || Unknown ||
+|| `0x00000400` || Unknown ||
+|| `0x00000800` || Unknown ||
+|| `0x00001000` || Unknown ||
+|| `0x00002000` || Use a MessageContainer to encapsulate the actual packet. ||
+|| `0x00004000` || Unknown ||
+|| `0x00008000` || Unknown ||
+
 
 = Example =
 
 Add example here
+
