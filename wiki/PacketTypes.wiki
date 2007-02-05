@@ -16,22 +16,22 @@ The following packets have been identified, grouped by their packet ID (see Dpla
   * DplayHeaders. (Not a real packet, but deserves an extra page.)
 
 
-  * Type 0x0001: LobbyInformation
-  * Type 0x0002: LobbyBroadcast
-  * Type 0x0004: GameInformationRequest
-  * Type 0x0005: IDRequest
-  * Type 0x0007: IDReply
-  * Type 0x0008: PlayerInformation
-  * Type 0x000b: ConnectionShutdown
-  * Type 0x000d: BeginTransmission
-  * Type 0x000e: EndTransmission
-  * Type 0x000f: GameSettingsChanged
-  * Type 0x0013: JoinGame
-  * Type 0x0015: MessageContainer
-  * Type 0x0016: DataSend
-  * Type 0x0017: DataAck
-  * Type 0x001a: -unknown-
-  * Type 0x0029: GameInformation
-  * Type 0x002e: NewPlayerNotification
-  * Type 0x002f: NewPlayerConfirmation
-  * Type 0x0038: PlayerInformationNewPlayer
+  * Type `0x0001`: LobbyInformation
+  * Type `0x0002`: LobbyBroadcast
+  * Type `0x0004`: GameInformationRequest
+  * Type `0x0005`: IDRequest
+  * Type `0x0007`: IDReply
+  * Type `0x0008`: PlayerInformation
+  * Type `0x000b`: ConnectionShutdown
+  * Type `0x000d`: BeginTransmission
+  * Type `0x000e`: EndTransmission
+  * Type `0x000f`: GameSettingsChanged
+  * Type `0x0013`: JoinGame
+  * Type `0x0015`: MessageContainer
+  * Type `0x0016`: DataSend
+  * Type `0x0017`: DataAck
+  * Type `0x001a`: -unknown-
+  * Type `0x0029`: GameInformation
+  * Type `0x002e`: NewPlayerNotification
+  * Type `0x002f`: NewPlayerConfirmation
+  * Type `0x0038`: PlayerInformationNewPlayer
