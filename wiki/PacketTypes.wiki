@@ -19,8 +19,8 @@ The following packets have been identified, grouped by their packet ID (see Dpla
   * Type `0x0001`: LobbyInformation
   * Type `0x0002`: LobbyBroadcast
   * Type `0x0004`: GameInformationRequest
-  * Type `0x0005`: IDRequest
-  * Type `0x0007`: IDReply
+  * Type `0x0005`: IdRequest
+  * Type `0x0007`: IdReply
   * Type `0x0008`: PlayerInformation
   * Type `0x000b`: ConnectionShutdown
   * Type `0x000d`: BeginTransmission
