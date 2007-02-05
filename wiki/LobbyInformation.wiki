@@ -1,0 +1,64 @@
+#summary Structure of a dplay lobby information.
+#labels Phase-Design,Phase-Implementation
+
+= Introduction =
+
+The lobby information packet is sent as a reply to the LobbyBroadcast packet. It contains information about the connection setup, the number of maximal allowed and current players and the game name.
+
+= Components =
+
+== Layout ==
+
+{{{
+ 0   1   2   3   4   5   6   7   8   9   A   B   C   D   E   F
++----------------------------------------------------------------+
+| Message size  | dplay flags   |        instance GUID           |
++----------------------------------------------------------------+
+|   instance GUID cont.         |         game GUID              |
++----------------------------------------------------------------+
+|      game GUID cont.          |  max players  | curr players   |
++----------------------------------------------------------------+
+| unknown magic 8 bytes         | DPID          | unknown 20...  |
++----------------------------------------------------------------+
+| ... bytes                                                      |
++----------------------------------------------------------------+
+| Custom game name data, size is Message Size - 80               |
++----------------------------------------------------------------+
+}}}
+
+== Legend ==
+
+|| `message size`  || The complete size of the message. ||
+|| `dplay flags`   || dplay message flags, see below for a list of identified flags. ||
+|| `instance GUID` || The GUID of the game instance. ||
+|| `game GUID`     || The GUID of the game. ||
+|| `max players`   || Maximum players allowed in the game. ||
+|| `curr players`  || Number of players currently in the game. ||
+|| `magic 8 bytes` || Usage not identified yet. Might be game specific. ||
+|| `DPID`          || A dplay ID, usage not identified yet. ||
+|| `20 bytes`      || Usage not identified, might be padding. ||
+
+== dplay flags ==
+
+|| `0x00000001` || Unknown ||
+|| `0x00000002` || Unknown ||
+|| `0x00000004` || Unknown ||
+|| `0x00000008` || Unknown ||
+|| `0x00000010` || Unknown ||
+|| `0x00000020` || Unknown ||
+|| `0x00000040` || Unknown ||
+|| `0x00000080` || Unknown ||
+|| `0x00000100` || Unknown ||
+|| `0x00000200` || Unknown ||
+|| `0x00000400` || Unknown ||
+|| `0x00000800` || Unknown ||
+|| `0x00001000` || Unknown ||
+|| `0x00002000` || Use a MessageContainer to encapsulate the actual packet. ||
+|| `0x00004000` || Unknown ||
+|| `0x00008000` || Unknown ||
+
+
+= Example =
+
+Add example here
+
