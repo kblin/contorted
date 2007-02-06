@@ -1,0 +1,6 @@
+#summary dplay player information packet.
+#labels Work-in-Progress
+
+= Introduction =
+
+Not documented yet.
