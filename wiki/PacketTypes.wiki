@@ -1,5 +1,5 @@
 #summary A broad overview over the known dplay packet types.
-#labels Phase-Design,Phase-Implementation
+#labels Phase-Design,Phase-Implementation,Featured
 
 = Introduction =
 
