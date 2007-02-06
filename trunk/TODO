@@ -7,4 +7,6 @@ Things to do in no particular order:
   uses.
 
 * Add documentation about the dplay protocol to the doc/ dir.
- 
+
+* Write some example dplay code to test out what different flags would do.
+
