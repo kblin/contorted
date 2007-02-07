@@ -100,8 +100,6 @@ static int hf_dplay_game_guid = -1; /* the GUID of the game */
 static int hf_dplay_instance_guid = -1; /* The GUID of the game's instance object */
 
 /* special fields, to be phased out in favour for more detailed information */
-static int hf_dplay_data_type_0d = -1;
-static int hf_dplay_data_type_0e = -1;
 static int hf_dplay_data_type_0f = -1;
 static int hf_dplay_data_type_1a = -1;
 static int hf_dplay_data_type_29 = -1;
@@ -153,6 +151,19 @@ static int hf_dplay_type_08_padding_2 = -1;     /* 2 bytes */
 static int hf_dplay_type_0b_padding_1 = -1;
 static int hf_dplay_type_0b_dpid = -1;
 static int hf_dplay_type_0b_padding_2 = -1;
+
+/* Message Type 0x000d data fields */
+static int hf_dplay_type_0d_padding_1 = -1;     /* 4 bytes */
+static int hf_dplay_type_0d_dpid_1 = -1;        /* 4 bytes */
+static int hf_dplay_type_0d_dpid_2 = -1;        /* 4 bytes */
+static int hf_dplay_type_0d_padding_2 = -1;     /* 8 bytes */
+
+/* Message Type 0x000e data fields */
+static int hf_dplay_type_0e_padding_1 = -1;     /* 4 bytes */
+static int hf_dplay_type_0e_dpid_1 = -1;        /* 4 bytes */
+static int hf_dplay_type_0e_dpid_2 = -1;        /* 4 bytes */
+static int hf_dplay_type_0e_padding_2 = -1;     /* 8 bytes */
+
 
 /* Message Type 0x0013 data fields */
 static int hf_dplay_type_13_padding_1 = -1;     /* 4 bytes */
@@ -525,13 +536,19 @@ static gint dissect_type0b_message(proto_tree *tree, tvbuff_t *tvb, gint offset)
 
 static gint dissect_type0d_message(proto_tree *tree, tvbuff_t *tvb, gint offset)
 {
-    proto_tree_add_item(tree, hf_dplay_data_type_0d, tvb, offset, -1, FALSE);
+    proto_tree_add_item(tree, hf_dplay_type_0d_padding_1, tvb, offset, 4, FALSE); offset += 4;
+    proto_tree_add_item(tree, hf_dplay_type_0d_dpid_1, tvb, offset, 4, FALSE); offset += 4;
+    proto_tree_add_item(tree, hf_dplay_type_0d_dpid_2, tvb, offset, 4, FALSE); offset += 4;
+    proto_tree_add_item(tree, hf_dplay_type_0d_padding_2, tvb, offset, 8, FALSE); offset += 8;
     return offset;
 }
 
 static gint dissect_type0e_message(proto_tree *tree, tvbuff_t *tvb, gint offset)
 {
-    proto_tree_add_item(tree, hf_dplay_data_type_0e, tvb, offset, -1, FALSE);
+    proto_tree_add_item(tree, hf_dplay_type_0e_padding_1, tvb, offset, 4, FALSE); offset += 4;
+    proto_tree_add_item(tree, hf_dplay_type_0e_dpid_1, tvb, offset, 4, FALSE); offset += 4;
+    proto_tree_add_item(tree, hf_dplay_type_0e_dpid_2, tvb, offset, 4, FALSE); offset += 4;
+    proto_tree_add_item(tree, hf_dplay_type_0e_padding_2, tvb, offset, 8, FALSE); offset += 8;
     return offset;
 }
 
@@ -1038,12 +1055,6 @@ static void proto_register_dplay()
         NULL, 0x0, "", HFILL}},
 
     /* special fields, to be phased out*/
-    { &hf_dplay_data_type_0d,
-        { "DirectPlay data for type 0d messages", "dplay.data.type_0d", FT_BYTES, BASE_HEX,
-        NULL, 0x0, "", HFILL}},
-    { &hf_dplay_data_type_0e,
-        { "DirectPlay data for type 0e messages", "dplay.data.type_0e", FT_BYTES, BASE_HEX,
-        NULL, 0x0, "", HFILL}},
     { &hf_dplay_data_type_0f,
         { "DirectPlay data for type 0f messages", "dplay.data.type_0f", FT_BYTES, BASE_HEX,
         NULL, 0x0, "", HFILL}},
@@ -1172,6 +1183,34 @@ static void proto_register_dplay()
         NULL, 0x0, "", HFILL}},
     { &hf_dplay_type_0b_padding_2,
         { "DirectPlay message type 0x000b padding 2", "dplay.type_0b.padding_2", FT_BYTES, BASE_HEX,
+        NULL, 0x0, "", HFILL}},
+
+    /* Data fields for message type 0x000d */
+    { &hf_dplay_type_0d_padding_1,
+        { "DirectPlay message type 0x000d padding 1", "dplay.type_0d.padding_1", FT_BYTES, BASE_HEX,
+        NULL, 0x0, "", HFILL}},
+    { &hf_dplay_type_0d_dpid_1,
+        { "DirectPlay message type 0x000d DP ID 1", "dplay.type_0d.dpid_1", FT_BYTES, BASE_HEX,
+        NULL, 0x0, "", HFILL}},
+    { &hf_dplay_type_0d_dpid_2,
+        { "DirectPlay message type 0x000d DP ID 2", "dplay.type_0d.dpid_2", FT_BYTES, BASE_HEX,
+        NULL, 0x0, "", HFILL}},
+    { &hf_dplay_type_0d_padding_2,
+        { "DirectPlay message type 0x000d padding 2", "dplay.type_0d.padding_2", FT_BYTES, BASE_HEX,
+        NULL, 0x0, "", HFILL}},
+
+    /* Data fields for message type 0x000e */
+    { &hf_dplay_type_0e_padding_1,
+        { "DirectPlay message type 0x000e padding 1", "dplay.type_0e.padding_1", FT_BYTES, BASE_HEX,
+        NULL, 0x0, "", HFILL}},
+    { &hf_dplay_type_0e_dpid_1,
+        { "DirectPlay message type 0x000e DP ID 1", "dplay.type_0e.dpid_1", FT_BYTES, BASE_HEX,
+        NULL, 0x0, "", HFILL}},
+    { &hf_dplay_type_0e_dpid_2,
+        { "DirectPlay message type 0x000e DP ID 2", "dplay.type_0e.dpid_2", FT_BYTES, BASE_HEX,
+        NULL, 0x0, "", HFILL}},
+    { &hf_dplay_type_0e_padding_2,
+        { "DirectPlay message type 0x000e padding 2", "dplay.type_0e.padding_2", FT_BYTES, BASE_HEX,
         NULL, 0x0, "", HFILL}},
 
     /* Data fields for message type 0x0013 */
