@@ -3,7 +3,7 @@
 
 = Introduction =
 
-The is two different ID request packets, differing in the data payload.
+There are two different ID request packets, differing in the data payload.
 
 = Components =
 
