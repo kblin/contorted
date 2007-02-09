@@ -185,8 +185,13 @@ static int hf_dplay_type_13_padding_2 = -1;     /* 2 bytes */
 static int hf_dplay_type_13_dpid_4 = -1;        /* 4 bytes */
 
 /* Message Type 0x0015 data fields */
-static int hf_dplay_type_15_guid = -1;
+static int hf_dplay_container_guid = -1;
+static int hf_dplay_type_15_padding_1 = -1;
+static int hf_dplay_type_15_size_1 = -1;
+static int hf_dplay_type_15_padding_2 = -1;
 static int hf_dplay_type_15_unknown_1 = -1;
+static int hf_dplay_type_15_size_2 = -1;
+static int hf_dplay_type_15_padding_3 = -1;
 
 /* Message Type 0x0016 data field */
 static int hf_dplay_type_16_data = -1;
@@ -602,8 +607,13 @@ static gint dissect_type15_message(proto_tree *tree, tvbuff_t *tvb, gint offset)
     proto_item *enc_item = NULL;
     proto_tree *enc_tree = NULL;
 
-    proto_tree_add_item(tree, hf_dplay_type_15_guid, tvb, offset, 16, FALSE); offset += 16;
-    proto_tree_add_item(tree, hf_dplay_type_15_unknown_1, tvb, offset, 24, FALSE); offset += 24;
+    proto_tree_add_item(tree, hf_dplay_container_guid, tvb, offset, 16, FALSE); offset += 16;
+    proto_tree_add_item(tree, hf_dplay_type_15_padding_1, tvb, offset, 4, FALSE); offset += 4;
+    proto_tree_add_item(tree, hf_dplay_type_15_size_1, tvb, offset, 4, TRUE); offset += 4;
+    proto_tree_add_item(tree, hf_dplay_type_15_padding_2, tvb, offset, 4, FALSE); offset += 4;
+    proto_tree_add_item(tree, hf_dplay_type_15_unknown_1, tvb, offset, 4, TRUE); offset += 4;
+    proto_tree_add_item(tree, hf_dplay_type_15_size_2, tvb, offset, 4, TRUE); offset += 4;
+    proto_tree_add_item(tree, hf_dplay_type_15_padding_3, tvb, offset, 4, FALSE); offset += 4;
 
     enc_item = proto_tree_add_text(tree, tvb, offset, -1, "DirectPlay encapsulated packet");
     enc_tree = proto_item_add_subtree(enc_item, ett_dplay_enc_packet);
@@ -1267,11 +1277,26 @@ static void proto_register_dplay()
         NULL, 0x0, "", HFILL}},
 
     /* Data fields for message type 0x0015 */
-    { &hf_dplay_type_15_guid,
-        { "DirectPlay message type 0x0015 GUID", "dplay.type_15.guid", FT_GUID, BASE_NONE,
+    { &hf_dplay_container_guid,
+        { "DirectPlay container GUID", "dplay.container.guid", FT_GUID, BASE_NONE,
+        NULL, 0x0, "", HFILL}},
+    { &hf_dplay_type_15_padding_1,
+        { "DirectPlay message type 0x0015 padding 1", "dplay.type_15.padding_1", FT_BYTES, BASE_HEX,
+        NULL, 0x0, "", HFILL}},
+    { &hf_dplay_type_15_size_1,
+        { "DirectPlay encapsulated packet size 1", "dplay.type_15.encap_size_1", FT_UINT32, BASE_DEC,
+        NULL, 0x0, "", HFILL}},
+    { &hf_dplay_type_15_padding_2,
+        { "DirectPlay message type 0x0015 padding 2", "dplay.type_15.padding_2", FT_BYTES, BASE_HEX,
         NULL, 0x0, "", HFILL}},
     { &hf_dplay_type_15_unknown_1,
-        { "DirectPlay message type 0x0015 unknown", "dplay.type_15.unknown_1", FT_BYTES, BASE_HEX,
+        { "DirectPlay message type 0x0015 unknown", "dplay.type_15.unknown_1", FT_UINT32, BASE_DEC,
+        NULL, 0x0, "", HFILL}},
+    { &hf_dplay_type_15_size_2,
+        { "DirectPlay encapsulated packet size 2", "dplay.type_15.encap_size_2", FT_UINT32, BASE_DEC,
+        NULL, 0x0, "", HFILL}},
+    { &hf_dplay_type_15_padding_3,
+        { "DirectPlay message type 0x0015 padding 3", "dplay.type_15.padding_3", FT_BYTES, BASE_HEX,
         NULL, 0x0, "", HFILL}},
 
     /* Data field for message type 0x0016 */
