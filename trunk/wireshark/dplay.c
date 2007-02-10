@@ -63,33 +63,33 @@ static const int DPLAY_HEADER_OFFSET = 28;  /* The dplay header is 28 bytes in s
  * meaning for all packets they show up in. */
 
 static int hf_dplay_flags = -1; /* This is a 32bit field with some sort of a flag */
-static int hf_dplay_flags_0001 = -1;
+static int hf_dplay_flags_client_server = -1;
 static int hf_dplay_flags_0002 = -1;
-static int hf_dplay_flags_0004 = -1;
+static int hf_dplay_flags_migrate_host = -1;
 static int hf_dplay_flags_0008 = -1;
 static int hf_dplay_flags_0010 = -1;
 static int hf_dplay_flags_0020 = -1;
-static int hf_dplay_flags_0040 = -1;
-static int hf_dplay_flags_0080 = -1;
-static int hf_dplay_flags_0100 = -1;
-static int hf_dplay_flags_0200 = -1;
-static int hf_dplay_flags_0400 = -1;
+static int hf_dplay_flags_nodpnsvr = -1;
+static int hf_dplay_flags_req_passwd = -1;
+static int hf_dplay_flags_noenums = -1;
+static int hf_dplay_flags_fast_sig = -1;
+static int hf_dplay_flags_full_sig = -1;
 static int hf_dplay_flags_0800 = -1;
 static int hf_dplay_flags_1000 = -1;
 static int hf_dplay_flags_encapsulate = -1;
 static int hf_dplay_flags_4000 = -1;
 static int hf_dplay_flags_8000 = -1;
-#define DPLAY_FLAG_0001 0x0001
+#define DPLAY_FLAG_CLIENT_SERVER 0x0001
 #define DPLAY_FLAG_0002 0x0002
-#define DPLAY_FLAG_0004 0x0004
+#define DPLAY_FLAG_MIGRATE_HOST 0x0004
 #define DPLAY_FLAG_0008 0x0008
 #define DPLAY_FLAG_0010 0x0010
 #define DPLAY_FLAG_0020 0x0020
-#define DPLAY_FLAG_0040 0x0040
-#define DPLAY_FLAG_0080 0x0080
-#define DPLAY_FLAG_0100 0x0100
-#define DPLAY_FLAG_0200 0x0200
-#define DPLAY_FLAG_0400 0x0400
+#define DPLAY_FLAG_NODPSVR 0x0040
+#define DPLAY_FLAG_REQ_PASSWD 0x0080
+#define DPLAY_FLAG_NOENUMS 0x0100
+#define DPLAY_FLAG_SIG_FAST 0x0200
+#define DPLAY_FLAG_SIG_FULL 0x0400
 #define DPLAY_FLAG_0800 0x0800
 #define DPLAY_FLAG_1000 0x1000
 #define DPLAY_FLAG_ENCAPSULATE 0x2000
@@ -344,11 +344,6 @@ static const true_false_string tfs_dplay_flag = {
     "absent"
 };
 
-static const true_false_string tfs_dplay_flag_encapsulate = {
-    "Encapsulate",
-    "Don't encapsulate"
-};
-
 #ifndef ENABLE_STATIC
 G_MODULE_EXPORT void plugin_register()
 {
@@ -435,22 +430,22 @@ static gint dissect_type01_message(proto_tree *tree, tvbuff_t *tvb, gint offset)
     proto_tree_add_item(tree, hf_dplay_type_01_length_1, tvb, offset, 4, TRUE); offset += 4;
     flags_item = proto_tree_add_item(tree, hf_dplay_flags, tvb, offset, 4, TRUE);
     flags_tree = proto_item_add_subtree(flags_item, ett_dplay_flags);
-    proto_tree_add_boolean(flags_tree, hf_dplay_flags_0001, tvb, offset, 4, flags);
-    proto_tree_add_boolean(flags_tree, hf_dplay_flags_0002, tvb, offset, 4, flags);
-    proto_tree_add_boolean(flags_tree, hf_dplay_flags_0004, tvb, offset, 4, flags);
-    proto_tree_add_boolean(flags_tree, hf_dplay_flags_0008, tvb, offset, 4, flags);
-    proto_tree_add_boolean(flags_tree, hf_dplay_flags_0010, tvb, offset, 4, flags);
-    proto_tree_add_boolean(flags_tree, hf_dplay_flags_0020, tvb, offset, 4, flags);
-    proto_tree_add_boolean(flags_tree, hf_dplay_flags_0040, tvb, offset, 4, flags);
-    proto_tree_add_boolean(flags_tree, hf_dplay_flags_0080, tvb, offset, 4, flags);
-    proto_tree_add_boolean(flags_tree, hf_dplay_flags_0100, tvb, offset, 4, flags);
-    proto_tree_add_boolean(flags_tree, hf_dplay_flags_0200, tvb, offset, 4, flags);
-    proto_tree_add_boolean(flags_tree, hf_dplay_flags_0400, tvb, offset, 4, flags);
-    proto_tree_add_boolean(flags_tree, hf_dplay_flags_0800, tvb, offset, 4, flags);
-    proto_tree_add_boolean(flags_tree, hf_dplay_flags_1000, tvb, offset, 4, flags);
-    proto_tree_add_boolean(flags_tree, hf_dplay_flags_encapsulate, tvb, offset, 4, flags);
-    proto_tree_add_boolean(flags_tree, hf_dplay_flags_4000, tvb, offset, 4, flags);
     proto_tree_add_boolean(flags_tree, hf_dplay_flags_8000, tvb, offset, 4, flags);
+    proto_tree_add_boolean(flags_tree, hf_dplay_flags_4000, tvb, offset, 4, flags);
+    proto_tree_add_boolean(flags_tree, hf_dplay_flags_encapsulate, tvb, offset, 4, flags);
+    proto_tree_add_boolean(flags_tree, hf_dplay_flags_1000, tvb, offset, 4, flags);
+    proto_tree_add_boolean(flags_tree, hf_dplay_flags_0800, tvb, offset, 4, flags);
+    proto_tree_add_boolean(flags_tree, hf_dplay_flags_full_sig, tvb, offset, 4, flags);
+    proto_tree_add_boolean(flags_tree, hf_dplay_flags_fast_sig, tvb, offset, 4, flags);
+    proto_tree_add_boolean(flags_tree, hf_dplay_flags_noenums, tvb, offset, 4, flags);
+    proto_tree_add_boolean(flags_tree, hf_dplay_flags_req_passwd, tvb, offset, 4, flags);
+    proto_tree_add_boolean(flags_tree, hf_dplay_flags_nodpnsvr, tvb, offset, 4, flags);
+    proto_tree_add_boolean(flags_tree, hf_dplay_flags_0020, tvb, offset, 4, flags);
+    proto_tree_add_boolean(flags_tree, hf_dplay_flags_0010, tvb, offset, 4, flags);
+    proto_tree_add_boolean(flags_tree, hf_dplay_flags_0008, tvb, offset, 4, flags);
+    proto_tree_add_boolean(flags_tree, hf_dplay_flags_migrate_host, tvb, offset, 4, flags);
+    proto_tree_add_boolean(flags_tree, hf_dplay_flags_0002, tvb, offset, 4, flags);
+    proto_tree_add_boolean(flags_tree, hf_dplay_flags_client_server, tvb, offset, 4, flags);
     offset += 4;
 
     proto_tree_add_item(tree, hf_dplay_instance_guid, tvb, offset, 16, FALSE); offset += 16;
@@ -670,8 +665,9 @@ static gint dissect_type1a_message(proto_tree *tree, tvbuff_t *tvb, gint offset)
 
 static gint dissect_type29_message(proto_tree *tree, tvbuff_t *tvb, gint offset)
 {
-    proto_item *first_saddr_item = NULL, *second_saddr_item = NULL;
-    proto_tree *first_saddr_tree = NULL, *second_saddr_tree = NULL;
+    proto_item *flags_item = NULL, *first_saddr_item = NULL, *second_saddr_item = NULL;
+    proto_tree *flags_tree = NULL, *first_saddr_tree = NULL, *second_saddr_tree = NULL;
+    guint32 flags = tvb_get_letohl(tvb, offset+4);
 
     proto_tree_add_item(tree, hf_dplay_type_29_unknown_uint32_01, tvb, offset, 4, TRUE); offset += 4;
     proto_tree_add_item(tree, hf_dplay_type_29_unknown_uint32_02, tvb, offset, 4, TRUE); offset += 4;
@@ -681,7 +677,26 @@ static gint dissect_type29_message(proto_tree *tree, tvbuff_t *tvb, gint offset)
     proto_tree_add_item(tree, hf_dplay_type_29_unknown_uint32_06, tvb, offset, 4, TRUE); offset += 4;
     proto_tree_add_item(tree, hf_dplay_type_29_unknown_uint32_07, tvb, offset, 4, TRUE); offset += 4;
     proto_tree_add_item(tree, hf_dplay_type_29_unknown_uint32_08, tvb, offset, 4, TRUE); offset += 4;
-    proto_tree_add_item(tree, hf_dplay_flags, tvb, offset, 4, TRUE); offset += 4;
+    flags_item = proto_tree_add_item(tree, hf_dplay_flags, tvb, offset, 4, TRUE);
+    flags_tree = proto_item_add_subtree(flags_item, ett_dplay_flags);
+    proto_tree_add_boolean(flags_tree, hf_dplay_flags_8000, tvb, offset, 4, flags);
+    proto_tree_add_boolean(flags_tree, hf_dplay_flags_4000, tvb, offset, 4, flags);
+    proto_tree_add_boolean(flags_tree, hf_dplay_flags_encapsulate, tvb, offset, 4, flags);
+    proto_tree_add_boolean(flags_tree, hf_dplay_flags_1000, tvb, offset, 4, flags);
+    proto_tree_add_boolean(flags_tree, hf_dplay_flags_0800, tvb, offset, 4, flags);
+    proto_tree_add_boolean(flags_tree, hf_dplay_flags_full_sig, tvb, offset, 4, flags);
+    proto_tree_add_boolean(flags_tree, hf_dplay_flags_fast_sig, tvb, offset, 4, flags);
+    proto_tree_add_boolean(flags_tree, hf_dplay_flags_noenums, tvb, offset, 4, flags);
+    proto_tree_add_boolean(flags_tree, hf_dplay_flags_req_passwd, tvb, offset, 4, flags);
+    proto_tree_add_boolean(flags_tree, hf_dplay_flags_nodpnsvr, tvb, offset, 4, flags);
+    proto_tree_add_boolean(flags_tree, hf_dplay_flags_0020, tvb, offset, 4, flags);
+    proto_tree_add_boolean(flags_tree, hf_dplay_flags_0010, tvb, offset, 4, flags);
+    proto_tree_add_boolean(flags_tree, hf_dplay_flags_0008, tvb, offset, 4, flags);
+    proto_tree_add_boolean(flags_tree, hf_dplay_flags_migrate_host, tvb, offset, 4, flags);
+    proto_tree_add_boolean(flags_tree, hf_dplay_flags_0002, tvb, offset, 4, flags);
+    proto_tree_add_boolean(flags_tree, hf_dplay_flags_client_server, tvb, offset, 4, flags);
+    offset += 4;
+
     proto_tree_add_item(tree, hf_dplay_instance_guid, tvb, offset, 16, FALSE); offset += 16;
     proto_tree_add_item(tree, hf_dplay_game_guid, tvb, offset, 16, FALSE); offset += 16;
     proto_tree_add_item(tree, hf_dplay_type_29_magic_16_bytes, tvb, offset, 16, FALSE); offset += 16;
@@ -1008,39 +1023,39 @@ static void proto_register_dplay()
     { &hf_dplay_flags,
         { "DirectPlay message flags", "dplay.flags", FT_UINT32, BASE_HEX,
         NULL, 0x0, "", HFILL}},
-    { &hf_dplay_flags_0001,
-        { "DirectPlay message flag 0x0001", "dplay.flags.flag_0001", FT_BOOLEAN, 32,
-        TFS(&tfs_dplay_flag), DPLAY_FLAG_0001, "Flag 0x0001", HFILL}},
+    { &hf_dplay_flags_client_server,
+        { "DirectPlay client/server flag", "dplay.flags.client_server", FT_BOOLEAN, 32,
+        TFS(&tfs_dplay_flag), DPLAY_FLAG_CLIENT_SERVER, "Client/Server", HFILL}},
     { &hf_dplay_flags_0002,
         { "DirectPlay message flag 0x0002", "dplay.flags.flag_0002", FT_BOOLEAN, 32,
         TFS(&tfs_dplay_flag), DPLAY_FLAG_0002, "Flag 0x0002", HFILL}},
-    { &hf_dplay_flags_0004,
-        { "DirectPlay message flag 0x0004", "dplay.flags.flag_0004", FT_BOOLEAN, 32,
-        TFS(&tfs_dplay_flag), DPLAY_FLAG_0004, "Flag 0x0004", HFILL}},
+    { &hf_dplay_flags_migrate_host,
+        { "DirectPlay migrate host flag", "dplay.flags.migrate_host", FT_BOOLEAN, 32,
+        TFS(&tfs_dplay_flag), DPLAY_FLAG_MIGRATE_HOST, "Migrate host", HFILL}},
     { &hf_dplay_flags_0008,
         { "DirectPlay message flag 0x0008", "dplay.flags.flag_0008", FT_BOOLEAN, 32,
-        TFS(&tfs_dplay_flag), DPLAY_FLAG_0008, "Flag 0x0001", HFILL}},
+        TFS(&tfs_dplay_flag), DPLAY_FLAG_0008, "Flag 0x0008", HFILL}},
     { &hf_dplay_flags_0010,
         { "DirectPlay message flag 0x0010", "dplay.flags.flag_0010", FT_BOOLEAN, 32,
-        TFS(&tfs_dplay_flag), DPLAY_FLAG_0010, "Flag 0x0001", HFILL}},
+        TFS(&tfs_dplay_flag), DPLAY_FLAG_0010, "Flag 0x0008", HFILL}},
     { &hf_dplay_flags_0020,
         { "DirectPlay message flag 0x0020", "dplay.flags.flag_0020", FT_BOOLEAN, 32,
         TFS(&tfs_dplay_flag), DPLAY_FLAG_0020, "Flag 0x0020", HFILL}},
-    { &hf_dplay_flags_0040,
-        { "DirectPlay message flag 0x0040", "dplay.flags.flag_0040", FT_BOOLEAN, 32,
-        TFS(&tfs_dplay_flag), DPLAY_FLAG_0040, "Flag 0x0040", HFILL}},
-    { &hf_dplay_flags_0080,
-        { "DirectPlay message flag 0x0080", "dplay.flags.flag_0080", FT_BOOLEAN, 32,
-        TFS(&tfs_dplay_flag), DPLAY_FLAG_0080, "Flag 0x0080", HFILL}},
-    { &hf_dplay_flags_0100,
-        { "DirectPlay message flag 0x0100", "dplay.flags.flag_0100", FT_BOOLEAN, 32,
-        TFS(&tfs_dplay_flag), DPLAY_FLAG_0100, "Flag 0x0100", HFILL}},
-    { &hf_dplay_flags_0200,
-        { "DirectPlay message flag 0x0200", "dplay.flags.flag_0200", FT_BOOLEAN, 32,
-        TFS(&tfs_dplay_flag), DPLAY_FLAG_0200, "Flag 0x0200", HFILL}},
-    { &hf_dplay_flags_0400,
-        { "DirectPlay message flag 0x0400", "dplay.flags.flag_0400", FT_BOOLEAN, 32,
-        TFS(&tfs_dplay_flag), DPLAY_FLAG_0400, "Flag 0x0400", HFILL}},
+    { &hf_dplay_flags_nodpnsvr,
+        { "DirectPlay NODPSVR flag", "dplay.flags.nodpsvr", FT_BOOLEAN, 32,
+        TFS(&tfs_dplay_flag), DPLAY_FLAG_NODPSVR, "nodpsvr", HFILL}},
+    { &hf_dplay_flags_req_passwd,
+        { "DirectPlay require password flag", "dplay.flags.req_passwd", FT_BOOLEAN, 32,
+        TFS(&tfs_dplay_flag), DPLAY_FLAG_REQ_PASSWD, "Require Password", HFILL}},
+    { &hf_dplay_flags_noenums,
+        { "DirectPlay NOENUMS flag", "dplay.flags.noenums", FT_BOOLEAN, 32,
+        TFS(&tfs_dplay_flag), DPLAY_FLAG_NOENUMS, "noenums", HFILL}},
+    { &hf_dplay_flags_fast_sig,
+        { "DirectPlay fast signed flag", "dplay.flags.fast_sig", FT_BOOLEAN, 32,
+        TFS(&tfs_dplay_flag), DPLAY_FLAG_SIG_FAST, "Fast Signed", HFILL}},
+    { &hf_dplay_flags_full_sig,
+        { "DirectPlay full signed flag", "dplay.flags.full_sig", FT_BOOLEAN, 32,
+        TFS(&tfs_dplay_flag), DPLAY_FLAG_SIG_FULL, "Full Signed", HFILL}},
     { &hf_dplay_flags_0800,
         { "DirectPlay message flag 0x0800", "dplay.flags.flag_0800", FT_BOOLEAN, 32,
         TFS(&tfs_dplay_flag), DPLAY_FLAG_0800, "Flag 0x0800", HFILL}},
@@ -1049,7 +1064,7 @@ static void proto_register_dplay()
         TFS(&tfs_dplay_flag), DPLAY_FLAG_1000, "Flag 0x1000", HFILL}},
     { &hf_dplay_flags_encapsulate,
         { "DirectPlay encapsulation flag", "dplay.flags.encapsulate", FT_BOOLEAN, 32,
-        TFS(&tfs_dplay_flag_encapsulate), DPLAY_FLAG_ENCAPSULATE, "Flag 0x2000", HFILL}},
+        TFS(&tfs_dplay_flag), DPLAY_FLAG_ENCAPSULATE, "Flag 0x2000", HFILL}},
     { &hf_dplay_flags_4000,
         { "DirectPlay message flag 0x4000", "dplay.flags.flag_4000", FT_BOOLEAN, 32,
         TFS(&tfs_dplay_flag), DPLAY_FLAG_4000, "Flag 0x4000", HFILL}},
