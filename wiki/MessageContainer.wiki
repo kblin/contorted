@@ -4,7 +4,7 @@
 = Introduction =
 
 This message encapsulates another dplay message. Encapsulation is controled by the apporpriate flag in the 
-LobbyInformation packet. Encapsulated packets are only sent by the client.
+LobbyInformation packet. Not all packets are encapsulated. E.g. the server only sends ConnectionShutdown packets encapsulated.
 
 = Components =
 
