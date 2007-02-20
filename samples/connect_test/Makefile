@@ -1,4 +1,4 @@
-CONNECT_TEST_SOURCES=connect_test.cpp
+CONNECT_TEST_SOURCES=connect_test.cpp sample_common.cpp
 CONNECT_TEST_HEADERS=
 CONNECT_TEST_RESSOURCE=connect_test.resp
 CC=cl
