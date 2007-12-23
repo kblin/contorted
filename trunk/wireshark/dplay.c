@@ -200,8 +200,8 @@ static int hf_dplay_type_16_data = -1;
 static int hf_dplay_type_17_data = -1;
 
 /* Message Type 0x0029 data fields */
-static int hf_dplay_type_29_unknown_uint32_01 = -1;
-static int hf_dplay_type_29_unknown_uint32_02 = -1;
+static int hf_dplay_type_29_unknown_uint32_01 = -1; /* seems to always be 3 */
+static int hf_dplay_type_29_message_end_type = -1;  /* mostly 0, alternative packet ending on 1 */
 static int hf_dplay_type_29_unknown_uint32_03 = -1;
 static int hf_dplay_type_29_unknown_uint32_04 = -1;
 static int hf_dplay_type_29_unknown_uint32_05 = -1;
@@ -217,7 +217,7 @@ static int hf_dplay_type_29_unknown_uint32_11 = -1;
 static int hf_dplay_type_29_dpid_2 = -1;
 static int hf_dplay_type_29_unknown_uint32_12 = -1;
 static int hf_dplay_type_29_unknown_uint32_13 = -1;
-static int hf_dplay_type_29_unknown_uint8_1 = -1;
+static int hf_dplay_type_29_saddr_field_len_1 = -1;
 static int hf_dplay_type_29_saddr_af_1 = -1;
 static int hf_dplay_type_29_saddr_port_1 = -1;
 static int hf_dplay_type_29_saddr_ip_1 = -1;
@@ -226,7 +226,12 @@ static int hf_dplay_type_29_saddr_af_2 = -1;
 static int hf_dplay_type_29_saddr_port_2 = -1;
 static int hf_dplay_type_29_saddr_ip_2 = -1;
 static int hf_dplay_type_29_saddr_padd_2 = -1;
+static int hf_dplay_type_29_unknown_uint32_14 = -1;
+static int hf_dplay_type_29_unknown_uint32_15 = -1;
 static int hf_dplay_type_29_dpid_3 = -1;
+static int hf_dplay_type_29_unknown_uint32_16 = -1;
+static int hf_dplay_type_29_unknown_uint32_17 = -1;
+static int hf_dplay_type_29_saddr_field_len_2 = -1;
 static int hf_dplay_type_29_saddr_af_3 = -1;
 static int hf_dplay_type_29_saddr_port_3 = -1;
 static int hf_dplay_type_29_saddr_ip_3 = -1;
@@ -235,6 +240,11 @@ static int hf_dplay_type_29_saddr_af_4 = -1;
 static int hf_dplay_type_29_saddr_port_4 = -1;
 static int hf_dplay_type_29_saddr_ip_4 = -1;
 static int hf_dplay_type_29_saddr_padd_4 = -1;
+static int hf_dplay_type_29_unknown_uint32_18 = -1;
+static int hf_dplay_type_29_unknown_uint32_19= -1;
+static int hf_dplay_type_29_dpid_4 = -1;
+static int hf_dplay_type_29_unknown_uint32_20 = -1;
+static int hf_dplay_type_29_dpid_5 = -1;
 
 /* Message Type 0x002e data fields */
 static int hf_dplay_type_2e_padding_1 = -1;
@@ -293,6 +303,8 @@ static gint ett_dplay_type13_saddr1 = -1;
 static gint ett_dplay_type13_saddr2 = -1;
 static gint ett_dplay_type29_saddr1 = -1;
 static gint ett_dplay_type29_saddr2 = -1;
+static gint ett_dplay_type29_saddr3 = -1;
+static gint ett_dplay_type29_saddr4 = -1;
 static gint ett_dplay_type2e_saddr1 = -1;
 static gint ett_dplay_type2e_saddr2 = -1;
 static gint ett_dplay_type38_saddr1 = -1;
@@ -336,6 +348,12 @@ static const value_string dplay_proto_version_val[] = {
 static const value_string dplay_type05_request[] = {
     { 0x00000008, "eight"},
     { 0x00000009, "nine"},
+    { 0         , NULL},
+};
+
+static const value_string dplay_type29_end_type[] = {
+    { 0x00000000, "sockaddr"},
+    { 0x00000001, "DPID"},
     { 0         , NULL},
 };
 
@@ -422,10 +440,11 @@ static gint dissect_type01_message(proto_tree *tree, tvbuff_t *tvb, gint offset)
 {
     gint data_len;
     guint32 flags;
-    data_len = tvb_get_letohl(tvb, offset);
-    flags = tvb_get_letohl(tvb, offset+4);
     proto_item *flags_item = NULL;
     proto_tree *flags_tree = NULL;
+
+    data_len = tvb_get_letohl(tvb, offset);
+    flags = tvb_get_letohl(tvb, offset+4);
 
     proto_tree_add_item(tree, hf_dplay_type_01_length_1, tvb, offset, 4, TRUE); offset += 4;
     flags_item = proto_tree_add_item(tree, hf_dplay_flags, tvb, offset, 4, TRUE);
@@ -598,9 +617,9 @@ static gint dissect_type13_message(proto_tree *tree, tvbuff_t *tvb, gint offset)
 static gint dissect_type15_message(proto_tree *tree, tvbuff_t *tvb, gint offset)
 {
     guint16 second_message_type;
-    second_message_type = tvb_get_letohs(tvb, 72);
     proto_item *enc_item = NULL;
     proto_tree *enc_tree = NULL;
+    second_message_type = tvb_get_letohs(tvb, 72);
 
     proto_tree_add_item(tree, hf_dplay_container_guid, tvb, offset, 16, FALSE); offset += 16;
     proto_tree_add_item(tree, hf_dplay_type_15_padding_1, tvb, offset, 4, FALSE); offset += 4;
@@ -665,12 +684,17 @@ static gint dissect_type1a_message(proto_tree *tree, tvbuff_t *tvb, gint offset)
 
 static gint dissect_type29_message(proto_tree *tree, tvbuff_t *tvb, gint offset)
 {
-    proto_item *flags_item = NULL, *first_saddr_item = NULL, *second_saddr_item = NULL;
-    proto_tree *flags_tree = NULL, *first_saddr_tree = NULL, *second_saddr_tree = NULL;
-    guint32 flags = tvb_get_letohl(tvb, offset+4);
+    proto_item *flags_item = NULL, *first_saddr_item = NULL,
+	       *second_saddr_item = NULL, *third_saddr_item = NULL,
+	       *fourth_saddr_item = NULL;
+    proto_tree *flags_tree = NULL, *first_saddr_tree = NULL,
+	       *second_saddr_tree = NULL, *third_saddr_tree = NULL,
+	       *fourth_saddr_tree = NULL;
+    guint32 end_type = tvb_get_letohl(tvb, offset+4);
+    guint32 flags = tvb_get_letohl(tvb, offset+32);
 
     proto_tree_add_item(tree, hf_dplay_type_29_unknown_uint32_01, tvb, offset, 4, TRUE); offset += 4;
-    proto_tree_add_item(tree, hf_dplay_type_29_unknown_uint32_02, tvb, offset, 4, TRUE); offset += 4;
+    proto_tree_add_item(tree, hf_dplay_type_29_message_end_type, tvb, offset, 4, TRUE); offset += 4;
     proto_tree_add_item(tree, hf_dplay_type_29_unknown_uint32_03, tvb, offset, 4, TRUE); offset += 4;
     proto_tree_add_item(tree, hf_dplay_type_29_unknown_uint32_04, tvb, offset, 4, TRUE); offset += 4;
     proto_tree_add_item(tree, hf_dplay_type_29_unknown_uint32_05, tvb, offset, 4, TRUE); offset += 4;
@@ -708,7 +732,7 @@ static gint dissect_type29_message(proto_tree *tree, tvbuff_t *tvb, gint offset)
     proto_tree_add_item(tree, hf_dplay_type_29_dpid_2, tvb, offset, 4, FALSE); offset += 4;
     proto_tree_add_item(tree, hf_dplay_type_29_unknown_uint32_12, tvb, offset, 4, TRUE); offset += 4;
     proto_tree_add_item(tree, hf_dplay_type_29_unknown_uint32_13, tvb, offset, 4, TRUE); offset += 4;
-    proto_tree_add_item(tree, hf_dplay_type_29_unknown_uint8_1, tvb, offset, 1, FALSE); offset += 1;
+    proto_tree_add_item(tree, hf_dplay_type_29_saddr_field_len_1, tvb, offset, 1, FALSE); offset += 1;
 
     first_saddr_item = proto_tree_add_text(tree, tvb, offset, 16,
             "DirectPlay message type 0x0029 s_addr_in structure 1");
@@ -728,8 +752,42 @@ static gint dissect_type29_message(proto_tree *tree, tvbuff_t *tvb, gint offset)
     proto_tree_add_item(second_saddr_tree, hf_dplay_type_29_saddr_ip_2, tvb, offset, 4, FALSE); offset += 4;
     proto_tree_add_item(second_saddr_tree, hf_dplay_type_29_saddr_padd_2, tvb, offset, 8, FALSE); offset += 8;
 
-    /* still much missing here */
+    proto_tree_add_item(tree, hf_dplay_type_29_unknown_uint32_14, tvb, offset, 4, TRUE); offset += 4;
+    proto_tree_add_item(tree, hf_dplay_type_29_unknown_uint32_15, tvb, offset, 4, TRUE); offset += 4;
+    proto_tree_add_item(tree, hf_dplay_type_29_dpid_3, tvb, offset, 4, FALSE); offset += 4;
+    proto_tree_add_item(tree, hf_dplay_type_29_unknown_uint32_16, tvb, offset, 4, TRUE); offset += 4;
+    proto_tree_add_item(tree, hf_dplay_type_29_unknown_uint32_17, tvb, offset, 4, TRUE); offset += 4;
+    proto_tree_add_item(tree, hf_dplay_type_29_saddr_field_len_2, tvb, offset, 1, FALSE); offset += 1;
+
+    third_saddr_item = proto_tree_add_text(tree, tvb, offset, 16,
+            "DirectPlay message type 0x0029 s_addr_in structure 3");
+    third_saddr_tree = proto_item_add_subtree(third_saddr_item,
+		    ett_dplay_type29_saddr3);
+
+    proto_tree_add_item(third_saddr_tree, hf_dplay_type_29_saddr_af_3, tvb, offset, 2, TRUE); offset += 2;
+    proto_tree_add_item(third_saddr_tree, hf_dplay_type_29_saddr_port_3, tvb, offset, 2, FALSE); offset += 2;
+    proto_tree_add_item(third_saddr_tree, hf_dplay_type_29_saddr_ip_3, tvb, offset, 4, FALSE); offset += 4;
+    proto_tree_add_item(third_saddr_tree, hf_dplay_type_29_saddr_padd_3, tvb, offset, 8, FALSE); offset += 8;
+
+    fourth_saddr_item = proto_tree_add_text(tree, tvb, offset, 16,
+            "DirectPlay message type 0x0029 s_addr_in structure 4");
+    fourth_saddr_tree = proto_item_add_subtree(fourth_saddr_item,
+		    ett_dplay_type29_saddr4);
+
+    proto_tree_add_item(fourth_saddr_tree, hf_dplay_type_29_saddr_af_4, tvb, offset, 2, TRUE); offset += 2;
+    proto_tree_add_item(fourth_saddr_tree, hf_dplay_type_29_saddr_port_4, tvb, offset, 2, FALSE); offset += 2;
+    proto_tree_add_item(fourth_saddr_tree, hf_dplay_type_29_saddr_ip_4, tvb, offset, 4, FALSE); offset += 4;
+    proto_tree_add_item(fourth_saddr_tree, hf_dplay_type_29_saddr_padd_4, tvb, offset, 8, FALSE); offset += 8;
+
+    proto_tree_add_item(tree, hf_dplay_type_29_unknown_uint32_18, tvb, offset, 4, TRUE); offset += 4;
+    proto_tree_add_item(tree, hf_dplay_type_29_unknown_uint32_19, tvb, offset, 4, TRUE); offset += 4;
+    proto_tree_add_item(tree, hf_dplay_type_29_dpid_4, tvb, offset, 4, FALSE); offset += 4;
+    proto_tree_add_item(tree, hf_dplay_type_29_unknown_uint32_20, tvb, offset, 4, TRUE); offset += 4;
+    proto_tree_add_item(tree, hf_dplay_type_29_dpid_5, tvb, offset, 4, FALSE); offset += 4;
+
+    /* still some parts missing here */
     proto_tree_add_item(tree, hf_dplay_data_type_29, tvb, offset, -1, FALSE);
+    /* here we parse another saddr_field_len and two saddr structs */
     return offset;
 }
 
@@ -869,7 +927,7 @@ static void dissect_dplay(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
     if(check_col(pinfo->cinfo,COL_INFO))
     {
         if(message_type == 0x0015)
-            col_add_fstr(pinfo->cinfo,COL_INFO, "%s, %s, holding a %s",
+            col_add_fstr(pinfo->cinfo,COL_INFO, "%s: %s, holding a %s",
                 val_to_str(proto_version, dplay_proto_version_val, "Unknown (0x%04x)"),
                 val_to_str(message_type, dplay_type_val, "Unknown (0x%04x)"),
                 val_to_str(second_message_type, dplay_type_val, "Unknown (0x%04x)"));
@@ -1328,9 +1386,9 @@ static void proto_register_dplay()
     { &hf_dplay_type_29_unknown_uint32_01,
         { "DirectPlay message type 0x0029 unknown uint32 1 (3)", "dplay.type_29.unknown_uint32_01", FT_UINT32,
         BASE_DEC, NULL, 0x0, "", HFILL}},
-    { &hf_dplay_type_29_unknown_uint32_02,
-        { "DirectPlay message type 0x0029 unknown uint32 2 (0)", "dplay.type_29.unknown_uint32_02", FT_UINT32,
-        BASE_DEC, NULL, 0x0, "", HFILL}},
+    { &hf_dplay_type_29_message_end_type,
+        { "DirectPlay message type 0x0029 message end type", "dplay.type_29.msg_end_type", FT_UINT32,
+        BASE_DEC, VALS(dplay_type29_end_type), 0x0, "", HFILL}},
     { &hf_dplay_type_29_unknown_uint32_03,
         { "DirectPlay message type 0x0029 unknown uint32 3", "dplay.type_29.unknown_uint32_03", FT_UINT32,
         BASE_DEC, NULL, 0x0, "", HFILL}},
@@ -1371,13 +1429,13 @@ static void proto_register_dplay()
         { "DirectPlay message type 0x0029 DPID", "dplay.type_29.dpid", FT_BYTES, BASE_HEX,
         NULL, 0x0, "", HFILL}},
     { &hf_dplay_type_29_unknown_uint32_12,
-        { "DirectPlay message type 0x0029 unknown uint32 12", "dplay.type_29.unknown_uint32_12", FT_UINT32,
+        { "DirectPlay message type 0x0029 unknown uint32 12 (4)", "dplay.type_29.unknown_uint32_12", FT_UINT32,
         BASE_DEC, NULL, 0x0, "", HFILL}},
     { &hf_dplay_type_29_unknown_uint32_13,
-        { "DirectPlay message type 0x0029 unknown uint32 13", "dplay.type_29.unknown_uint32_13", FT_UINT32,
+        { "DirectPlay message type 0x0029 unknown uint32 13 (14)", "dplay.type_29.unknown_uint32_13", FT_UINT32,
         BASE_DEC, NULL, 0x0, "", HFILL}},
-    { &hf_dplay_type_29_unknown_uint8_1,
-        { "DirectPlay message type 0x0029 unknown uint8 1", "dplay.type_29.unknown_uint8_1", FT_UINT8,
+    { &hf_dplay_type_29_saddr_field_len_1,
+        { "DirectPlay message type 0x0029 saddr field len 1", "dplay.type_29.saddr_field_len_1", FT_UINT8,
         BASE_DEC, NULL, 0x0, "", HFILL}},
     { &hf_dplay_type_29_saddr_af_1,
         { "DirectPlay message type 0x0029 s_addr_in address family 1", "dplay.type_29.saddr.af_1", FT_UINT16,
@@ -1403,6 +1461,24 @@ static void proto_register_dplay()
     { &hf_dplay_type_29_saddr_padd_2,
         { "DirectPlay message type 0x0029 s_addr_in padding 2", "dplay.type_29.saddr.padd_2", FT_BYTES, BASE_HEX,
         NULL, 0x0, "", HFILL}},
+    { &hf_dplay_type_29_unknown_uint32_14,
+        { "DirectPlay message type 0x0029 unknown uint32 14 (16)", "dplay.type_29.unknown_uint32_14", FT_UINT32,
+        BASE_DEC, NULL, 0x0, "", HFILL}},
+    { &hf_dplay_type_29_unknown_uint32_15,
+        { "DirectPlay message type 0x0029 unknown uint32 15 (15)", "dplay.type_29.unknown_uint32_15", FT_UINT32,
+        BASE_DEC, NULL, 0x0, "", HFILL}},
+    { &hf_dplay_type_29_dpid_3,
+        { "DirectPlay message type 0x0029 DPID", "dplay.type_29.dpid", FT_BYTES, BASE_HEX,
+        NULL, 0x0, "", HFILL}},
+    { &hf_dplay_type_29_unknown_uint32_16,
+        { "DirectPlay message type 0x0029 unknown uint32 16 (4)", "dplay.type_29.unknown_uint32_16", FT_UINT32,
+        BASE_DEC, NULL, 0x0, "", HFILL}},
+    { &hf_dplay_type_29_unknown_uint32_17,
+        { "DirectPlay message type 0x0029 unknown uint32 17 (14)", "dplay.type_29.unknown_uint32_17", FT_UINT32,
+        BASE_DEC, NULL, 0x0, "", HFILL}},
+    { &hf_dplay_type_29_saddr_field_len_2,
+        { "DirectPlay message type 0x0029 saddr field len 2", "dplay.type_29.saddr_field_len_2", FT_UINT8,
+        BASE_DEC, NULL, 0x0, "", HFILL}},
     { &hf_dplay_type_29_saddr_af_3,
         { "DirectPlay message type 0x0029 s_addr_in address family 3", "dplay.type_29.saddr.af_3", FT_UINT16,
             BASE_DEC, VALS(dplay_af_val), 0x0, "", HFILL}},
@@ -1426,6 +1502,21 @@ static void proto_register_dplay()
         NULL, 0x0, "", HFILL}},
     { &hf_dplay_type_29_saddr_padd_4,
         { "DirectPlay message type 0x0029 s_addr_in padding 4", "dplay.type_29.saddr.padd_4", FT_BYTES, BASE_HEX,
+        NULL, 0x0, "", HFILL}},
+    { &hf_dplay_type_29_unknown_uint32_18,
+        { "DirectPlay message type 0x0029 unknown uint32 18 (16)", "dplay.type_29.unknown_uint32_18", FT_UINT32,
+        BASE_DEC, NULL, 0x0, "", HFILL}},
+    { &hf_dplay_type_29_unknown_uint32_19,
+        { "DirectPlay message type 0x0029 unknown uint32 19 (15)", "dplay.type_29.unknown_uint32_19", FT_UINT32,
+        BASE_DEC, NULL, 0x0, "", HFILL}},
+    { &hf_dplay_type_29_dpid_4,
+        { "DirectPlay message type 0x0029 DPID", "dplay.type_29.dpid_4", FT_BYTES, BASE_HEX,
+        NULL, 0x0, "", HFILL}},
+    { &hf_dplay_type_29_unknown_uint32_20,
+        { "DirectPlay message type 0x0029 unknown uint32 20", "dplay.type_29.unknown_uint32_20", FT_UINT32,
+        BASE_DEC, NULL, 0x0, "", HFILL}},
+    { &hf_dplay_type_29_dpid_5,
+        { "DirectPlay message type 0x0029 DPID", "dplay.type_29.dpid_5", FT_BYTES, BASE_HEX,
         NULL, 0x0, "", HFILL}},
 
     /* Data fields for message type 0x002e */
@@ -1564,6 +1655,8 @@ static void proto_register_dplay()
         &ett_dplay_type13_saddr2,
         &ett_dplay_type29_saddr1,
         &ett_dplay_type29_saddr2,
+        &ett_dplay_type29_saddr3,
+        &ett_dplay_type29_saddr4,
         &ett_dplay_type2e_saddr1,
         &ett_dplay_type2e_saddr2,
         &ett_dplay_type38_saddr1,

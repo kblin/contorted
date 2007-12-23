@@ -1,3 +1,6 @@
+2007-12-23  Kai Blin  <kai.blin@gmail.com>
+	* wireshark/dplay.c: More work on the dissector.
+
 2007-02-06  Kai Blin  <kai.blin@gmail.com>
 	* samples/connect_test/: Started writig samples to be able to test for
 	  specific dplay packet fields.
@@ -8,5 +11,5 @@
 2006-12-06  Kai Blin  <kai.blin@gmail.com>
 	* Started working on contorted, a mock dplay client/server.
 	* dplay_common.c, dplay_common.h: Functions common to the client and the server.
-	* dpsvr.c, dpsvr.h: Simple mockup dplay server. 
+	* dpsvr.c, dpsvr.h: Simple mockup dplay server.
 	* Makefile: Simple makefile.

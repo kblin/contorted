@@ -24,7 +24,7 @@
 #include <vector>
 
 // {EF016237-BEEE-402a-A2D6-A2694C109574}
-DEFINE_GUID(CONNECT_TEST, 
+DEFINE_GUID(CONNECT_TEST,
 0xef016237, 0xbeee, 0x402a, 0xa2, 0xd6, 0xa2, 0x69, 0x4c, 0x10, 0x95, 0x74);
 
 typedef struct _dp_player_list {
@@ -209,13 +209,14 @@ HRESULT hostGame()
     app_desc.dwSize = sizeof(DPN_APPLICATION_DESC);
     app_desc.guidApplication = CONNECT_TEST;
 
-    if(FAILED(hr = pDP->Host(&app_desc, &pDP_addr, 1, NULL, NULL, NULL, 0)))
+    if(FAILED(hr = pDP->Host(&app_desc, &pDP_addr, 1, NULL, NULL, NULL, DPNHOST_OKTOQUERYFORADDRESSING)))
     {
         fprintf(stderr, "Failed to host a game: 0x%08x\n", hr);
         return hr;
     }
 
     printf("Hosted game.\n");
-    
+
     return hr;
 }
+
